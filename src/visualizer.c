@@ -41,7 +41,7 @@ void free_g(visualizer *v) {
   grid_free(v->g);
 }
 
-visualizer newVisualizer(int width, int height, int graph_n, double scale, int max_step) {
+visualizer newVisualizer(int width, int height, int graph_n, double scale, int max_step, int run_by_step) {
   visualizer v;
   grid *g = grid_new(width, height);
   renderer_new(g);
@@ -52,6 +52,7 @@ visualizer newVisualizer(int width, int height, int graph_n, double scale, int m
   v.graph_n = graph_n;
   v.scale = scale;
   v.max_step = max_step;
+  v.run_by_step = run_by_step;
   v.graph_init = graph_init;
   v.draw_graph_1s = draw_graph_1s;
   v.print_graph_value = print_graph_value;

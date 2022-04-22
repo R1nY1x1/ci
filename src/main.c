@@ -7,6 +7,7 @@
 #include "renderer.h"
 #include "ci.h"
 #include "visualizer.h"
+#include "interpreter/repl.h"
 
 #define SPLIT (GRAPH_N*2)
 #define GRAPH_N (DIM+2)
@@ -19,14 +20,18 @@ double fx(double *x) {
 double grad_x1(double x) { return 2 * x; }
 double grad_x2(double x) { return 8 * x; }
 
-void command_mode(void) {
+void command_mode(visualizer *v) {
   char cmd[32];
   echo();
   nocbreak();
+  attron(COLOR_PAIR(1));
   move(0, 0);
   insertln();
-  printw("COMMAND MODE : ");
+  printw("COMMAND MODE :");
+  attroff(COLOR_PAIR(1));
+  printw(" ");
   getstr(cmd);
+  REP(v, cmd);
   move(0, 0);
   deleteln();
   noecho();
@@ -35,12 +40,23 @@ void command_mode(void) {
 
 int main(int argc, char *argv[])
 {
+  int run_by_step = 0;
+  for (int i = 0; i < argc; i++) {
+    if (argv[i][0] == '-') {
+      switch (argv[i][1]) {
+        case 's':
+          run_by_step = 1;
+          break;
+      }
+    }
+  }
+
   int width = 120;
   int height = 160;
 
   int max_step = 15;
   int scale = 2;
-  visualizer v = newVisualizer(width, height, GRAPH_N, scale, max_step);
+  visualizer v = newVisualizer(width, height, GRAPH_N, scale, max_step, run_by_step);
 
   int count = 0;
   while(1){
@@ -57,24 +73,20 @@ int main(int argc, char *argv[])
     optimizer o = newOptimizer(h_params, n_params, gradient_descent);
 
     v.graph_init(&v);
-    for (int i = 0; i < max_step; i++) {
+    for (int i = 0; i < v.max_step; i++) {
       move(height / 4, 0);
       deleteln();
     }
 
-    //start_color();
-    init_pair(1, COLOR_CYAN, COLOR_BLACK);
-    attron(COLOR_PAIR(1));
-    attroff(COLOR_PAIR(1));
+    start_color();
+    init_pair(1, COLOR_BLACK, COLOR_CYAN);
 
     attron(A_BOLD);
     mvprintw(height / 4, 0, "|  k |     x_1 |     x_2 |      fx |   alpha |");
     attroff(A_BOLD);
     mvprintw(height / 4 + 1, 0, "|  0 | % 7.3lf | % 7.3lf | % 7.3lf | %7.3lf |", m.x[0], m.x[1], m.fx(x), o.h_params[2]);
 
-
-
-    for (int s = 0; s < max_step; s++) {
+    for (int s = 0; s < v.max_step; s++) {
       o.update(&m, &o);
 
       for (int i = 0; i < DIM; i++) {
@@ -96,14 +108,15 @@ int main(int argc, char *argv[])
       // move(height / 4 + 1, 0); deleteln();
       mvprintw(height / 4 + 1 + s + 1, 0, "| %2.d | % 7.3lf | % 7.3lf | % 7.3lf | %7.3lf |", s+1, m.x[0], m.x[1], m.fx(x), o.h_params[2]);
 
-      for (int i = 0; i < argc; i++) {
-        if (argv[i][0] == '-') {
-          switch (argv[i][1]) {
-            case 's':
-              renderer_update(v.g);
-              getch();
-              break;
-          }
+      if (v.run_by_step == 1) {
+        renderer_update(v.g);
+        switch(getch()) {
+          case ':' :
+            command_mode(&v);
+            s = v.max_step;
+            break;
+          default:
+            break;
         }
       }
       // if (fx(x[0], x[1]) < 0.001) { break; }
@@ -117,7 +130,7 @@ int main(int argc, char *argv[])
 
     switch(getch()) {
       case ':' :
-        command_mode();
+        command_mode(&v);
         break;
       case KEY_LEFT:
         count--;

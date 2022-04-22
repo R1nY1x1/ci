@@ -1,0 +1,50 @@
+#pragma once
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "token.h"
+#include "lexer.h"
+#include "grid.h"
+#include "renderer.h"
+#include "../visualizer.h"
+
+#include <ncurses.h>
+
+void REP(visualizer *v, char *cmd) {
+  Lexer l = newLexer(cmd);
+  if (l.NextToken(&l).Type == LET) {
+    Token tok = l.NextToken(&l);
+    if ((strcmp(tok.Literal, "scale") == 0)) {
+      if (l.NextToken(&l).Type == ASSIGN) {
+        v->scale = atof(l.NextToken(&l).Literal);
+      }
+    } else if (strcmp(tok.Literal, "max_step") == 0) {
+      if (l.NextToken(&l).Type == ASSIGN) {
+        v->max_step = atof(l.NextToken(&l).Literal);
+      }
+    } else if (strcmp(tok.Literal, "run_by_step") == 0) {
+      if (l.NextToken(&l).Type == ASSIGN) {
+        v->run_by_step = (bool)atoi(l.NextToken(&l).Literal);
+      }
+    }
+  }
+}
+  
+void REPL(void){
+  char cmd[32];
+  char prompt[4] = ">> ";
+
+  while (1) {
+    printf("%s", prompt);
+    scanf("%[^\n]%*c", cmd);
+
+    Lexer l = newLexer(cmd);
+    Token tok;
+    tok = l.NextToken(&l);
+    while (tok.Type != EndOfFile) {
+      printf("{%s, %s}\n", tok.TypeStr, tok.Literal);
+      tok = l.NextToken(&l);
+    }
+  }
+}
