@@ -9,10 +9,9 @@ enum TokenType {
   INT,
   ASSIGN,
   COMMA,
-  PERIOD,
   LPAREN,
   RPAREN,
-  LET,
+  SET,
 };
 
 struct Token {
@@ -46,17 +45,14 @@ Token newToken(enum TokenType Type, const char *Literal) {
     case COMMA:
       tok.TypeStr = "COMMA";
       break;
-    case PERIOD:
-      tok.TypeStr = "PERIOD";
-      break;
     case LPAREN:
       tok.TypeStr = "LPAREN";
       break;
     case RPAREN:
       tok.TypeStr = "RPAREN";
       break;
-    case LET:
-      tok.TypeStr = "LET";
+    case SET:
+      tok.TypeStr = "SET";
       break;
   } 
   return tok;
@@ -64,8 +60,8 @@ Token newToken(enum TokenType Type, const char *Literal) {
 
 enum TokenType LookupIdent(char *ident) {
   enum TokenType tok = IDENT;
-  if ((strcmp(ident, "let") == 0)) {
-    tok = LET;
+  if ((strcmp(ident, "set") == 0)) {
+    tok = SET;
   } else if (strcmp(ident, "hoge") == 0) {
   }
   return tok;

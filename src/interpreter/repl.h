@@ -13,7 +13,7 @@
 
 void REP(visualizer *v, char *cmd) {
   Lexer l = newLexer(cmd);
-  if (l.NextToken(&l).Type == LET) {
+  if (l.NextToken(&l).Type == SET) {
     Token tok = l.NextToken(&l);
     if ((strcmp(tok.Literal, "scale") == 0)) {
       if (l.NextToken(&l).Type == ASSIGN) {

@@ -47,9 +47,6 @@ Token NextToken(Lexer *l) {
     case ',':
       tok = newToken(COMMA, ",");
       break;
-    case '.':
-      tok = newToken(PERIOD, ".");
-      break;
     case '[':
       tok = newToken(LPAREN, "[");
       break;
