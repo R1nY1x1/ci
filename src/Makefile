@@ -1,5 +1,5 @@
 COMPILER = gcc
-COMPILER_FLAGS = -g -Wall -Werror 
+COMPILER_FLAGS = -Wall -Werror 
 LINKER_FLAGS = -lncurses -lm
 
 PROG_NAME = main

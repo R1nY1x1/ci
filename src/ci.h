@@ -4,6 +4,7 @@ struct model {
   int dim;
   double *x;
   double *pre_x;
+  double fx_ret;
   double *d;
   double (*fx)(double *);
   double (**dx)(double);

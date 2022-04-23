@@ -17,11 +17,17 @@ void REP(visualizer *v, char *cmd) {
     Token tok = l.NextToken(&l);
     if ((strcmp(tok.Literal, "scale") == 0)) {
       if (l.NextToken(&l).Type == ASSIGN) {
-        v->scale = atof(l.NextToken(&l).Literal);
+        Token tok = l.NextToken(&l);
+        for (int i = 0; i < (v->m->dim+1); i++) {
+          v->figures[i].scale = atof(tok.Literal);
+        }
       }
     } else if (strcmp(tok.Literal, "max_step") == 0) {
       if (l.NextToken(&l).Type == ASSIGN) {
-        v->max_step = atof(l.NextToken(&l).Literal);
+        Token tok = l.NextToken(&l);
+        for (int i = 0; i < (v->m->dim+1); i++) {
+          v->figures[i].max_step = atof(tok.Literal);
+        }
       }
     } else if (strcmp(tok.Literal, "run_by_step") == 0) {
       if (l.NextToken(&l).Type == ASSIGN) {

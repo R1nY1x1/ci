@@ -1,25 +1,65 @@
 #pragma once
 
+#include "ci.h"
 #include "grid.h"
 
-struct visualizer {
-  grid *g;
-  int graph_n;
-  double scale;
+struct textbox {
+  int row;
+  int column;
+  int row_n;
+  int column_n;
+  char **texts;
+  void (*update)(struct textbox *, char *, int);
+  void (*print)(struct textbox *);
+};
+typedef struct textbox textbox;
+
+void update_textbox(textbox *t, char *text, int cur_num);
+void print_text(textbox *t);
+
+textbox newTextbox(int row, int column, int row_n, int column_n);
+
+struct figure {
+  int x;
+  int y;
+  int width;
+  int height;
+  double value;
+  double pre_value;
+  char *value_name;
+  double *value_ptr;
+  textbox t;
+  int step;
   int max_step;
+  double scale;
+  void (*update)(struct figure *);
+  void (*plot)(struct figure *, grid *);
+};
+typedef struct figure figure;
+
+void update_figure(figure *f);
+void plot_figure(figure *f, grid *g);
+
+figure newFigure(int x, int y, int width, int height, char *value_name, double *value_ptr, int max_step, double scale);
+
+struct visualizer {
+  model *m;
+  grid *g;
   int run_by_step;
-  void (*graph_init)(struct visualizer *);
-  void (*draw_graph_1s)(struct visualizer *, double, double, int, int);
-  void (*print_graph_value)(struct visualizer *, char *, int);
-  void (*free_g)(struct visualizer *);
+  figure *figures;
+  textbox *textboxs;
+  void (*visualizer_init)(struct visualizer *);
+  void (*grid_init)(struct visualizer *);
+  void (*update)(struct visualizer *);
+  void (*free)(struct visualizer *);
 };
 typedef struct visualizer visualizer;
 
-void graph_init(visualizer *v);
-void draw_graph_1s(visualizer *v, double pre_value, double value, int step, int num);
-void print_graph_value(visualizer *v, char *str, int num);
-void free_g(visualizer *v);
+void visualizer_init(visualizer *v);
+void grid_init(visualizer *v);
+void update_visualizer(visualizer *v);
+void free_visualizer(visualizer *v);
 
-visualizer newVisualizer(int width, int height, int graph_n, double scale, int max_step, int run_by_step);
+visualizer newVisualizer(model *m, int width, int height);
 
 int clamp(int value, int min, int max);

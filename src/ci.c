@@ -22,6 +22,7 @@ model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double)
   m.dim = dim;
   m.x = x;
   m.pre_x = (double*)malloc(sizeof(double) * m.dim);
+  m.fx_ret = fx(x);
   m.d = (double*)malloc(sizeof(double) * m.dim);
   m.fx = fx;
   m.dx = dx;
@@ -68,4 +69,5 @@ void gradient_descent(model *m, optimizer *o){
     m->pre_x[i] = m->x[i];
     m->x[i] = m->x[i] + o->h_params[2] * m->d[i];
   }
+  m->fx_ret = m->fx(m->x);
 }
