@@ -17,25 +17,40 @@ void grad(model *m) {
   }
 }
 
+void deleteModel(model *m) {
+  free(m->x);
+  free(m->d);
+}
+
 model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double)) {
   model m;
   m.dim = dim;
-  m.x = x;
-  m.pre_x = (double*)malloc(sizeof(double) * m.dim);
+  m.x = (double*)malloc(sizeof(double) * m.dim);
+  for (int i = 0; i < dim; i++){
+    m.x[i] = x[i];
+  }
   m.fx_ret = fx(x);
   m.d = (double*)malloc(sizeof(double) * m.dim);
   m.fx = fx;
   m.dx = dx;
   m.grad_norm = grad_norm;
   m.grad = grad;
+  m.del = deleteModel;
   return m;
 }
 
-optimizer newOptimizer(double* h_params, int n_params, void method(model *, optimizer *)) {
+void deleteOptimizer(optimizer *o) {
+  free(o->h_params);
+}
+
+optimizer newOptimizer(double* h_params, int params_n, void method(model *, optimizer *)) {
   optimizer o;
-  o.h_params = h_params;
-  o.pre_h_params = (double*)malloc(sizeof(double) * n_params);
+  o.h_params = (double*)malloc(sizeof(double) * params_n);
+  for (int i = 0; i < params_n; i++) {
+    o.h_params[i] = h_params[i];
+  }
   o.update = method;
+  o.del = deleteOptimizer;
   return o;
 }
 
@@ -57,7 +72,6 @@ void gradient_descent(model *m, optimizer *o){
   */
   m->grad(m);
 
-  o->pre_h_params[2] = o->h_params[2];
   for (int i = 0; i < 8; i++) {
     o->h_params[2] = pow(o->h_params[1], i);
     if (armijo_rule(m, o)) {
@@ -66,7 +80,6 @@ void gradient_descent(model *m, optimizer *o){
   }
 
   for (int i = 0; i < m->dim; i++) {
-    m->pre_x[i] = m->x[i];
     m->x[i] = m->x[i] + o->h_params[2] * m->d[i];
   }
   m->fx_ret = m->fx(m->x);
