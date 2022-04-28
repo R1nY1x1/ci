@@ -29,7 +29,7 @@ model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double)
   for (int i = 0; i < dim; i++){
     m.x[i] = x[i];
   }
-  m.fx_ret = fx(x);
+  m.y = fx(x);
   m.d = (double*)malloc(sizeof(double) * m.dim);
   m.fx = fx;
   m.dx = dx;
@@ -39,48 +39,32 @@ model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double)
   return m;
 }
 
-void deleteOptimizer(optimizer *o) {
-  free(o->h_params);
+void update_method(model *m, method *mthd) {
+  mthd->function(m , mthd);
 }
 
-optimizer newOptimizer(double* h_params, int params_n, void method(model *, optimizer *)) {
-  optimizer o;
-  o.h_params = (double*)malloc(sizeof(double) * params_n);
+method newMethod(double* h_params, int params_n, void function(model *, method *)) {
+  method mthd;
+  mthd.h_params = (double*)malloc(sizeof(double) * params_n);
   for (int i = 0; i < params_n; i++) {
-    o.h_params[i] = h_params[i];
+    mthd.h_params[i] = h_params[i];
   }
-  o.update = method;
+  mthd.function = function;
+  mthd.update = update_method;
+  return mthd;
+}
+
+void update_optimizer(model *m, optimizer *o) {
+  o->mthd->update(m, o->mthd);
+}
+
+void deleteOptimizer(optimizer *o) {
+}
+
+optimizer newOptimizer(method *mthd) {
+  optimizer o;
+  o.mthd = mthd;
+  o.update = update_optimizer;
   o.del = deleteOptimizer;
   return o;
-}
-
-int armijo_rule(model *m, optimizer *o) {
-  double epi_x[m->dim];
-  double temp = 0;
-  for (int i = 0; i < m->dim; i++) {
-    epi_x[i] = m->x[i] + o->h_params[2] * m->d[i];
-    temp += m->d[i] * m->dx[i](m->x[i]);
-  }
-  return (m->fx(epi_x) <= (m->fx(m->x) + (o->h_params[0] * o->h_params[2] * temp)));
-}
-
-void gradient_descent(model *m, optimizer *o){
-  /*
-  h_params[0] : xi
-  h_params[1] : rho
-  h_params[2] : alpha
-  */
-  m->grad(m);
-
-  for (int i = 0; i < 8; i++) {
-    o->h_params[2] = pow(o->h_params[1], i);
-    if (armijo_rule(m, o)) {
-      break;
-    }
-  }
-
-  for (int i = 0; i < m->dim; i++) {
-    m->x[i] = m->x[i] + o->h_params[2] * m->d[i];
-  }
-  m->fx_ret = m->fx(m->x);
 }

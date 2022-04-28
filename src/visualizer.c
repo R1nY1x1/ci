@@ -8,7 +8,11 @@
 #include "visualizer.h"
 
 void update_textbox(textbox *t, char *text, int cursor) {
-  strcpy(t->texts[cursor-1], text);
+  if ((cursor-1) < t->row_n) {
+    strcpy(t->texts[cursor-1], text);
+  } else {
+    strcpy(t->texts[(cursor-1) % t->row_n], text);
+  }
 }
 
 void print_text(textbox *t) {
@@ -72,7 +76,7 @@ figure newFigure(int x, int y, int width, int height, char *value_name, double *
   f.value = *(value_ptr);
   f.t = newTextbox(x+width, y, height/4, 16);
   f.step = 0;
-  f.max_step = 16;
+  f.max_step = 15;
   f.scale = 2;
   f.update = update_figure;
   f.plot = plot_figure;
@@ -85,9 +89,9 @@ void visualizer_init(visualizer *v) {
     snprintf(value_name, sizeof(value_name), "x_%d", i+1);
     v->figures[i] = newFigure(0, v->g->height/(v->m->dim+1)*i, v->g->width, v->g->height/(v->m->dim+1), value_name, &(v->m->x[i]));
   }
-  v->figures[v->m->dim] = newFigure(0, v->g->height/(v->m->dim+1)*v->m->dim, v->g->width, v->g->height/(v->m->dim+1), "fx", &(v->m->fx_ret));
+  v->figures[v->m->dim] = newFigure(0, v->g->height/(v->m->dim+1)*v->m->dim, v->g->width, v->g->height/(v->m->dim+1), "fx", &(v->m->y));
 
-  v->textboxs[0] = newTextbox(0, v->g->height, 18, v->g->width/2);
+  v->textboxs[0] = newTextbox(0, v->g->height, 17, v->g->width/2);
   v->grid_init(v);
 }
 
@@ -105,7 +109,7 @@ void grid_init(visualizer *v) {
   }
   v->textboxs[0].update(&(v->textboxs[0]), "|  k |     x_1 |     x_2 |       fx |", 1);
   char table_str[v->textboxs[0].column_n];
-  snprintf(table_str, sizeof(table_str), "|  0 | % 7.3lf | % 7.3lf | % 8.3lf |", v->m->x[0], v->m->x[1], v->m->fx_ret);
+  snprintf(table_str, sizeof(table_str), "|  0 | % 7.3lf | % 7.3lf | % 8.3lf |", v->m->x[0], v->m->x[1], v->m->y);
   v->textboxs[0].update(&(v->textboxs[0]), table_str, 2);
   v->textboxs[0].print(&(v->textboxs[0]));
 }
@@ -116,7 +120,7 @@ void update_visualizer(visualizer *v) {
     v->figures[i].plot(&(v->figures[i]), v->g);
   }
   char table_str[v->g->width/2];
-  snprintf(table_str, sizeof(table_str), "| %2d | % 7.3lf | % 7.3lf | % 8.3lf |", v->figures[0].step, v->m->x[0], v->m->x[1], v->m->fx_ret);
+  snprintf(table_str, sizeof(table_str), "| %2d | % 7.3lf | % 7.3lf | % 8.3lf |", v->figures[0].step, v->m->x[0], v->m->x[1], v->m->y);
   v->textboxs[0].update(&(v->textboxs[0]), table_str, v->figures[0].step+2);
   v->textboxs[0].print(&(v->textboxs[0]));
 }

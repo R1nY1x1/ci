@@ -1,22 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <math.h>
 #include <unistd.h>
 #include <ncurses.h>
 #include "grid.h"
 #include "renderer.h"
 #include "ci.h"
+#include "method.h"
 #include "visualizer.h"
 #include "interpreter/repl.h"
 
-#define DIM 2
-
 double fx(double *x) {
-  return x[0] * x[0] + 4 * x[1] * x[1];
+  return fabs(x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6);
+  //return x[0] * x[0] + 4 * x[1] * x[1];
 }
 
 double grad_x1(double x) { return 2 * x; }
 double grad_x2(double x) { return 8 * x; }
+
+double *x_ptr;
+double *d_ptr;
 
 void command_mode(visualizer *v) {
   char cmd[32];
@@ -38,6 +42,34 @@ void command_mode(visualizer *v) {
 
 int main(int argc, char *argv[])
 {
+  srand((unsigned int)time(NULL));
+  //double x[] = {-4.0, -2.0};
+  double x[] = {((double)rand())/((double)RAND_MAX+1.0) * (5 - (-5)) + (-5)};
+  double (*dx[])(double) = {
+    grad_x1,
+    grad_x2,
+  };
+  model m = newModel(sizeof(x)/sizeof(double), x, fx, dx);
+
+  //double h_params[] = {1, pow(10, -4), 0.5};
+  /*
+  double h_params[] = {1};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, gradient_descent);
+  double sub_h_params[] = {0, pow(10, 2), pow(10, -2), pow(10, -3)};
+  int sub_params_n = sizeof(sub_h_params) / sizeof(double);
+  method sub_mthd = newMethod(sub_h_params, sub_params_n, bisection_method);
+  mthd.sub_mthd = &sub_mthd;
+  double h_params[] = {0.1, 1};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, liner_method);
+  */
+  double h_params[] = {0, 1};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, hill_climbing);
+
+  optimizer o = newOptimizer(&mthd);
+
   int width = 120;
   int height = 160;
 
@@ -51,25 +83,9 @@ int main(int argc, char *argv[])
   init_pair(1, COLOR_BLACK, COLOR_CYAN);
 
 
-  double x[DIM] = {-4.0, -2.0};
-  double (*dx[])(double) = {
-    grad_x1,
-    grad_x2,
-  };
-  model m = newModel(DIM, x, fx, dx);
-
-  double h_params[] = {pow(10, -4), 0.5, 1};
-  int params_n = sizeof(h_params) / sizeof(double);
-  optimizer o = newOptimizer(h_params, params_n, gradient_descent);
-
-  int max_step = 16;
-  double scale = 0.2;
+  int max_step = 1000;
+  double scale = 5;
   visualizer v = newVisualizer(&m, g, width, height);
-  v.visualizer_init(&v);
-  for (int i = 0; i < (v.m->dim+1); i++) {
-    v.figures[i].max_step = max_step;
-    v.figures[i].scale = scale;
-  }
 
   for (int i = 0; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -82,8 +98,10 @@ int main(int argc, char *argv[])
   }
 
   while(1){
-    x[0] += 0.1;
-    m = newModel(DIM, x, fx, dx);
+    //x[0] += 0.1;
+    m = newModel(sizeof(x)/sizeof(double), x, fx, dx);
+    x_ptr = m.x;
+    d_ptr = m.d;
     v.m = &m;
 
     v.visualizer_init(&v);
@@ -107,7 +125,9 @@ int main(int argc, char *argv[])
             break;
         }
       }
-      // if (fx(x[0], x[1]) < 0.001) { break; }
+      if (m.fx(m.x) <= pow(10, -5)) {
+        break;
+      }
     }
     renderer_update(g);
 

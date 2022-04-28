@@ -1,9 +1,10 @@
 #pragma once
+#pragma once
 
 struct model {
   int dim;
   double *x;
-  double fx_ret;
+  double y;
   double *d;
   double (*fx)(double *);
   double (**dx)(double);
@@ -19,15 +20,26 @@ void deleteModel(model *m);
 
 model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double));
 
-struct optimizer {
+struct method {
   double *h_params;
+  struct method *sub_mthd;
+  void (*function)(model *, struct method *);
+  void (*update)(model *, struct method *);
+};
+typedef struct method method;
+
+void update_method(model *m, method *mthd);
+
+method newMethod(double* h_params, int params_n, void function(model *, method *));
+
+struct optimizer {
+  method *mthd;
   void (*update)(model *, struct optimizer *);
   void (*del)(struct optimizer *);
 };
 typedef struct optimizer optimizer;
 
-optimizer newOptimizer(double* h_params, int n_params, void method(model *, optimizer *));
+void update_optimizer(model *m, optimizer *o);
 void deleteOptimizer(optimizer *o);
 
-int armijo_rule(model *m, optimizer *o);
-void gradient_descent(model *m, optimizer *o);
+optimizer newOptimizer(method *mthd);
