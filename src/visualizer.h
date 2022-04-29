@@ -3,6 +3,19 @@
 #include "ci.h"
 #include "grid.h"
 
+struct variable {
+  double pre_value;
+  double value;
+  double *ptr;
+  char name[8];
+  void (*update)(struct variable *);
+};
+typedef struct variable variable;
+
+void update_variable(variable *var);
+
+variable newVariable(double *ptr, char *name);
+
 struct textbox {
   int row;
   int column;
@@ -26,10 +39,7 @@ struct figure {
   int y;
   int width;
   int height;
-  double value;
-  double pre_value;
-  char value_name[8];
-  double *value_ptr;
+  variable *var;
   textbox t;
   int step;
   int max_step;
@@ -42,14 +52,15 @@ typedef struct figure figure;
 void update_figure(figure *f);
 void plot_figure(figure *f, grid *g);
 
-figure newFigure(int x, int y, int width, int height, char *value_name, double *value_ptr);
+figure newFigure(int x, int y, int width, int height, variable *var);
 
 struct visualizer {
-  model *m;
   grid *g;
-  int run_by_step;
+  int vars_n;
+  variable **vars;
   figure *figures;
   textbox *textboxs;
+  int run_by_step;
   void (*visualizer_init)(struct visualizer *);
   void (*grid_init)(struct visualizer *);
   void (*update)(struct visualizer *);
@@ -64,6 +75,6 @@ void update_visualizer(visualizer *v);
 void free_visualizer(visualizer *v);
 void deleteVisualizer(visualizer *v);
 
-visualizer newVisualizer(model *m, grid *g, int width, int height);
+visualizer newVisualizer(grid *g, variable *vars[], int vars_n);
 
 int clamp(int value, int min, int max);

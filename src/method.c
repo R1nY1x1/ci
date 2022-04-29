@@ -68,7 +68,7 @@ void gradient_descent(model *m, method *mthd){
   */
   m->grad(m);
 
-  double x[] = {1};
+  double x[] = {mthd->h_params[0]};
   double (*dx[])(double) = {};
   model alpha_model = newModel(sizeof(x)/sizeof(double), x, sub_fx, dx);
   mthd->sub_mthd->update(&alpha_model, mthd->sub_mthd);
@@ -89,15 +89,12 @@ void liner_method(model *m, method *mthd) {
   m->y = m->fx(m->x);
 }
 
-
 double uniform(void) {
   return ((double)rand()) / ((double)RAND_MAX + 1.0);
 }
 
-
 double rand_normal(double mu, double sigma) {
   return mu + sigma * sqrt(-2.0 * log(uniform())) * sin(2.0 * M_PI * uniform());
-  
 }
 
 void hill_climbing(model *m, method *mthd) {
@@ -106,9 +103,6 @@ void hill_climbing(model *m, method *mthd) {
   h_params[1] : sigma
   */
   double x_rand[1];
-  if ((double)rand() == 16807) {
-    srand((unsigned int)time(NULL));
-  }
   x_rand[0] = rand_normal(mthd->h_params[0], mthd->h_params[1]) + m->x[0];
 
   if (m->fx(x_rand) < m->fx(m->x)) {

@@ -12,6 +12,7 @@
 #include <ncurses.h>
 
 void REP(visualizer *v, char *cmd) {
+  /*
   Lexer l = newLexer(cmd);
   if (l.NextToken(&l).Type == SET) {
     Token tok = l.NextToken(&l);
@@ -35,6 +36,7 @@ void REP(visualizer *v, char *cmd) {
       }
     }
   }
+  */
 }
   
 void REPL(void){
