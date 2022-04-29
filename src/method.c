@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include <time.h>
 #include <math.h>
 #include <ncurses.h>
 #include "ci.h"
+#include "method.h"
 
 void armijo_rule(model *m, method *mthd) {
   /*

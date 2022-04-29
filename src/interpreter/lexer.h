@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _LEXER_H
+#define _LEXER_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +7,7 @@
 #include "token.h"
 
 int isLetter(char ch) {
-  return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_');
+  return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || (ch == '_') || ('0' <= ch && ch <= '9');
 }
 
 int isDigit(char ch) {
@@ -57,13 +58,13 @@ Token NextToken(Lexer *l) {
       tok = newToken(EndOfFile, " ");
       break;
     default:
-      if (isLetter(l->ch)) {
+      if (isDigit(l->ch)) {
+        tok = newToken(INT, l->readNumber(l));
+        return tok;
+      } else if (isLetter(l->ch)) {
         char* Literal = NULL;
         Literal = l->readIdentifier(l);
         tok = newToken(LookupIdent(Literal), Literal);
-        return tok;
-      } else if (isDigit(l->ch)) {
-        tok = newToken(INT, l->readNumber(l));
         return tok;
       } else {
         tok = newToken(ILLEGAL, &(l->ch));
@@ -125,3 +126,4 @@ Lexer newLexer(char *input) {
   l.readChar(&l);
   return l;
 }
+#endif

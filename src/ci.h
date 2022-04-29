@@ -1,5 +1,5 @@
-#pragma once
-#pragma once
+#ifndef _CI_H
+#define _CI_H
 
 struct model {
   int dim;
@@ -43,3 +43,4 @@ void update_optimizer(model *m, optimizer *o);
 void deleteOptimizer(optimizer *o);
 
 optimizer newOptimizer(method *mthd);
+#endif

@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ncurses.h>
 #include "grid.h"
 #include "renderer.h"
 #include "visualizer.h"
+#include "util.h"
 
 void update_variable(variable *var) {
   var->pre_value = var->value;
@@ -39,6 +39,7 @@ void clear_textbox(textbox *t) {
     for (int j = 0; j < t->column_n; j++) {
       mvdelch(t->row+i, t->column);
     }
+    t->texts[i][0] = '\0';
   }
 }
 
@@ -61,9 +62,13 @@ textbox newTextbox(int x, int y, int row_n, int column_n) {
 void update_figure(figure *f) {
   f->var->update(f->var);
   f->step++;
-  char value_str[16];
-  snprintf(value_str, sizeof(value_str), "%s=%.3lf", f->var->name, f->var->value);
-  f->t.update(&(f->t), value_str, 2);
+  char str[16];
+  snprintf(str, sizeof(str), "name : %s", f->var->name);
+  f->t.update(&(f->t), str, 2);
+  snprintf(str, sizeof(str), "value: %5.3lf", f->var->value);
+  f->t.update(&(f->t), str, 3);
+  snprintf(str, sizeof(str), "diff : %5.3lf", f->var->value - f->var->pre_value);
+  f->t.update(&(f->t), str, 4);
 }
 
 void plot_figure(figure *f, grid *g) {
@@ -95,39 +100,9 @@ figure newFigure(int x, int y, int width, int height, variable *var) {
 }
 
 void visualizer_init(visualizer *v) {
-  for (int i = 0; i < v->vars_n; i++) {
-    v->figures[i] = newFigure(0, v->g->height/(v->vars_n)*i, v->g->width, v->g->height/(v->vars_n), v->vars[i]);
-  }
+  grid_init(v);
 
-  v->textboxs[0] = newTextbox(0, v->g->height, 17, v->g->width/2);
-  v->grid_init(v);
-}
-
-void insert_head(char *str, char *head) {
-  int str_l = strlen(str);
-  int head_l = strlen(head);
-  for (int i = str_l; i >= 0; i--) {
-    str[head_l+i] = str[i];
-  }
-  for (int i = 0; i < head_l; i++) {
-    str[i] = head[i];
-  }
-}
-
-void grid_init(visualizer *v) {
-  grid_clear(v->g);
-  for (int i = 0; i < (v->vars_n); i++) {
-    v->figures[i].t.clear_t(&(v->figures[i].t));
-  }
-  v->textboxs[0].clear_t(&(v->textboxs[0]));
-  grid_draw_line(v->g, 0, 0, 0, v->g->height-1);
-  grid_draw_line(v->g, v->g->width - 1, 0, v->g->width - 1, v->g->height-1);
-  grid_draw_line(v->g, 0, v->g->height - 1, v->g->width, v->g->height - 1);
-  for (int i = 0; i < (v->vars_n); i++) {
-    grid_draw_line(v->g, 0, v->g->height/(v->vars_n) * i, v->g->width, v->g->height/(v->vars_n) * i);
-  }
-
-  char str[v->textboxs[0].column_n];
+  char str[v->textboxs[1].column_n];
   char cell[12];
   for (int i = 0; i < v->vars_n; i++) {
     snprintf(cell, sizeof(cell), "| %8s ", v->figures[i].var->name);
@@ -137,7 +112,7 @@ void grid_init(visualizer *v) {
   }
   snprintf(cell, sizeof(cell), "| %8s ", "step");
   insert_head(str, cell);
-  v->textboxs[0].update(&(v->textboxs[0]), str, 1);
+  v->textboxs[1].update(&(v->textboxs[1]), str, 1);
   for (int i = 0; i < v->vars_n; i++) {
     snprintf(cell, sizeof(cell), "| %8.3lf ", v->figures[i].var->value);
     for (int j = 0; j < 12; j++) {
@@ -146,8 +121,24 @@ void grid_init(visualizer *v) {
   }
   snprintf(cell, sizeof(cell), "| %8d ", v->figures[0].step);
   insert_head(str, cell);
-  v->textboxs[0].update(&(v->textboxs[0]), str, 2);
+  v->textboxs[1].update(&(v->textboxs[1]), str, 2);
+  v->textboxs[1].print(&(v->textboxs[1]));
+}
+
+void grid_init(visualizer *v) {
+  grid_clear(v->g);
+  for (int i = 0; i < (v->vars_n); i++) {
+    v->figures[i].step = 0;
+    v->figures[i].t.clear_t(&(v->figures[i].t));
+    v->figures[i].var->update(v->figures[i].var);
+  }
   v->textboxs[0].print(&(v->textboxs[0]));
+  v->textboxs[1].clear_t(&(v->textboxs[1]));
+  renderer_update(v->g);
+
+  for (int i = 0; v->grid_lines[i] != NULL; i++) {
+    grid_draw_line(v->g, v->grid_lines[i][0], v->grid_lines[i][1], v->grid_lines[i][2], v->grid_lines[i][3]);
+  }
 }
 
 void update_visualizer(visualizer *v) {
@@ -155,7 +146,7 @@ void update_visualizer(visualizer *v) {
     v->figures[i].update(&(v->figures[i]));
     v->figures[i].plot(&(v->figures[i]), v->g);
   }
-  char str[v->textboxs[0].column_n];
+  char str[v->textboxs[1].column_n];
   char cell[12];
   for (int i = 0; i < v->vars_n; i++) {
     snprintf(cell, sizeof(cell), "| %8.3lf ", v->figures[i].var->value);
@@ -165,8 +156,8 @@ void update_visualizer(visualizer *v) {
   }
   snprintf(cell, sizeof(cell), "| %8d ", v->figures[0].step);
   insert_head(str, cell);
-  v->textboxs[0].update(&(v->textboxs[0]), str, v->figures[0].step+2);
-  v->textboxs[0].print(&(v->textboxs[0]));
+  v->textboxs[1].update(&(v->textboxs[1]), str, v->figures[0].step+2);
+  v->textboxs[1].print(&(v->textboxs[1]));
 }
 
 void free_visualizer(visualizer *v) {
@@ -177,6 +168,7 @@ void free_visualizer(visualizer *v) {
     free(v->figures[i].t.texts);
   }
   free(v->textboxs[0].texts);
+  free(v->textboxs[1].texts);
 }
 
 void deleteVisualizer(visualizer *v) {
@@ -188,10 +180,41 @@ void deleteVisualizer(visualizer *v) {
 visualizer newVisualizer(grid *g, variable *vars[], int vars_n) {
   visualizer v;
   v.g = g;
+  v.grid_lines = (int**)malloc(sizeof(int*) * (3 + vars_n));
+  for (int i = 0; i < (3 + vars_n); i++) {
+    v.grid_lines[i] = (int*)malloc(sizeof(int) * 4);
+  }
+  // vertical left line
+  v.grid_lines[0][0] = 0;
+  v.grid_lines[0][1] = 0;
+  v.grid_lines[0][2] = 0;
+  v.grid_lines[0][3] = v.g->height-1;
+  // vertical right line
+  v.grid_lines[1][0] = v.g->width-1;
+  v.grid_lines[1][1] = 0;
+  v.grid_lines[1][2] = v.g->width-1;
+  v.grid_lines[1][3] = v.g->height-1;
+  // horizontal top line
+  v.grid_lines[2][0] = 0;
+  v.grid_lines[2][1] = v.g->height-1;
+  v.grid_lines[2][2] = v.g->width;
+  v.grid_lines[2][3] = v.g->height-1;
+  // horizontal line
+  for (int i = 0; i < (vars_n); i++) {
+    v.grid_lines[3+i][0] = 0;
+    v.grid_lines[3+i][1] = v.g->height/vars_n * i;
+    v.grid_lines[3+i][2] = v.g->width;
+    v.grid_lines[3+i][3] = v.g->height/vars_n * i;
+  }
   v.vars_n = vars_n;
   v.vars = vars;
   v.figures = (figure*)malloc(sizeof(figure) * vars_n);
-  v.textboxs = (textbox*)malloc(sizeof(textbox) * 1);
+  v.textboxs = (textbox*)malloc(sizeof(textbox) * 2);
+  for (int i = 0; i < v.vars_n; i++) {
+    v.figures[i] = newFigure(0, v.g->height/(v.vars_n)*i, v.g->width, v.g->height/(v.vars_n), v.vars[i]);
+  }
+  v.textboxs[0] = newTextbox(0, 0, v.g->height/4, v.g->width/2);
+  v.textboxs[1] = newTextbox(0, v.g->height, 17, v.g->width/2);
   v.run_by_step = 0;
   v.visualizer_init = visualizer_init;
   v.grid_init = grid_init;
@@ -199,15 +222,4 @@ visualizer newVisualizer(grid *g, variable *vars[], int vars_n) {
   v.free = free_visualizer;
   v.del = deleteVisualizer;
   return v;
-}
-
-int clamp(int value, int min, int max)
-{
-    if (value < min) {
-        return min;
-    }
-    else if (value > max) {
-        return max;
-    }
-    return value;
 }

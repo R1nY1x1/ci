@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _METHOD_H
+#define _METHOD_H
 
 #include "ci.h"
 
@@ -11,3 +12,4 @@ double uniform(void);
 double rand_normal(double mu, double sigma);
 
 void hill_climbing(model *m, method *mthd);
+#endif

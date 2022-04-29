@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _TOKEN_H
+#define _TOKEN_H
 
 #include <string.h>
 
@@ -11,7 +12,8 @@ enum TokenType {
   COMMA,
   LPAREN,
   RPAREN,
-  SET,
+  LET,
+  DRAW,
 };
 
 struct Token {
@@ -51,8 +53,11 @@ Token newToken(enum TokenType Type, const char *Literal) {
     case RPAREN:
       tok.TypeStr = "RPAREN";
       break;
-    case SET:
-      tok.TypeStr = "SET";
+    case LET:
+      tok.TypeStr = "LET";
+      break;
+    case DRAW:
+      tok.TypeStr = "DRAW";
       break;
   } 
   return tok;
@@ -60,9 +65,11 @@ Token newToken(enum TokenType Type, const char *Literal) {
 
 enum TokenType LookupIdent(char *ident) {
   enum TokenType tok = IDENT;
-  if ((strcmp(ident, "set") == 0)) {
-    tok = SET;
-  } else if (strcmp(ident, "hoge") == 0) {
+  if ((strcmp(ident, "let") == 0)) {
+    tok = LET;
+  } else if (strcmp(ident, "draw") == 0) {
+    tok = DRAW;
   }
   return tok;
 }
+#endif

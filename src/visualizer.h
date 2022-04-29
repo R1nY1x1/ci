@@ -1,6 +1,6 @@
-#pragma once
+#ifndef _VISUALIZER_H
+#define _VISUALIZER_H
 
-#include "ci.h"
 #include "grid.h"
 
 struct variable {
@@ -56,6 +56,7 @@ figure newFigure(int x, int y, int width, int height, variable *var);
 
 struct visualizer {
   grid *g;
+  int **grid_lines;
   int vars_n;
   variable **vars;
   figure *figures;
@@ -76,5 +77,4 @@ void free_visualizer(visualizer *v);
 void deleteVisualizer(visualizer *v);
 
 visualizer newVisualizer(grid *g, variable *vars[], int vars_n);
-
-int clamp(int value, int min, int max);
+#endif
