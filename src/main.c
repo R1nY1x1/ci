@@ -4,6 +4,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <ncurses.h>
+#include <sys/stat.h>
 #include "grid.h"
 #include "renderer.h"
 #include "ci.h"
@@ -28,13 +29,6 @@ void command_mode(visualizer *v);
 int main(int argc, char *argv[])
 {
   srand((unsigned int)time(NULL));
-
-  /*
-  FILE *fp = fopen("hist.csv", "w");
-  if (fp == NULL) {
-    return -1;
-  }
-  */
 
   // Define Model
   double x[] = {-4.0, -2.0};
@@ -105,6 +99,20 @@ int main(int argc, char *argv[])
       }
     }
   }
+
+  // Run Command
+  char *filename = ".circ";
+  FILE *fp = fopen(filename, "r");
+  if (fp == NULL) {
+    return -1;
+  }
+  struct stat fstat;
+  stat(filename, &fstat);
+  char *cmd = malloc(fstat.st_size);
+  while (fscanf(fp, "%[^\n] ", cmd) != EOF) {
+    REP(&v, cmd);
+  }
+  fclose(fp);
 
   // main loop : could enter COMMANDMODE
   while(1){
