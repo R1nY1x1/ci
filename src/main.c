@@ -108,7 +108,6 @@ int main(int argc, char *argv[])
 
   // main loop : could enter COMMANDMODE
   while(1){
-    x[0] += 0.1;
     //x[0] = ((double)rand())/((double)RAND_MAX+1.0) * (5 - (-5)) + (-5);
     for (int i = 0; i < sizeof(x)/sizeof(double); i++) {
       m.x[i] = x[i];
@@ -121,7 +120,7 @@ int main(int argc, char *argv[])
     v.visualizer_init(&v);
 
     // optimization loop
-    for (int s = 0; s < max_step; s++) {
+    for (int s = 0; s < v.figures[0].max_step; s++) {
       o.update(&m, &o);
       v.update(&v);
 
@@ -146,16 +145,20 @@ int main(int argc, char *argv[])
         printQuit(stdscr);
         renderer_update(v.g);
         m.del(&m);
+        mthd.del(&mthd);
         o.del(&o);
         v.del(&v);
         renderer_free();
         grid_free(v.g);
         return 0;
       case KEY_LEFT:
+        x[0] -= 0.1;
         break;
       case KEY_RIGHT:
+        x[0] += 0.1;
         break;
       default:
+        x[0] += 0.1;
         break;
     }
   }

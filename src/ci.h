@@ -25,10 +25,12 @@ struct method {
   struct method *sub_mthd;
   void (*function)(model *, struct method *);
   void (*update)(model *, struct method *);
+  void (*del)(struct method *);
 };
 typedef struct method method;
 
 void update_method(model *m, method *mthd);
+void deleteMethod(method *mthd);
 
 method newMethod(double* h_params, int params_n, void function(model *, method *));
 

@@ -24,6 +24,7 @@ void REP(visualizer *v, char *cmd) {
         for (int i = 0; i < (v->vars_n); i++) {
           v->figures[i].scale = atof(tok.Literal);
         }
+        v->textboxs[0].clear_t(&(v->textboxs[0]));
       }
     } else if (strcmp(tok.Literal, "max_step") == 0) {
       if (l.NextToken(&l).Type == ASSIGN) {
@@ -31,6 +32,7 @@ void REP(visualizer *v, char *cmd) {
         for (int i = 0; i < (v->vars_n); i++) {
           v->figures[i].max_step = atof(tok.Literal);
         }
+        v->textboxs[0].clear_t(&(v->textboxs[0]));
       }
     } else if (strcmp(tok.Literal, "run_by_step") == 0) {
       if (l.NextToken(&l).Type == ASSIGN) {
@@ -48,7 +50,7 @@ void REP(visualizer *v, char *cmd) {
             char str[v->textboxs[0].column_n];
             memset(str, ' ', sizeof(str));
             for (int y = v->figures[i].y+5; y < (v->figures[i].height + v->figures[i].y)+4; y++) {
-              str[(atoi(tok.Literal) * v->figures[i].width / v->figures[i].max_step + v->figures[i].x)/2] = '|';
+              str[fit_figure_x(atoi(tok.Literal), &(v->figures[i]))/2] = '|';
               v->textboxs[0].update(&v->textboxs[0], str, y/4+1);
             }
           }
@@ -61,7 +63,7 @@ void REP(visualizer *v, char *cmd) {
               for (int x = v->figures[i].x; x < (v->figures[i].width + v->figures[i].x); x++) {
                 str[x/2] = '-';
               }
-              v->textboxs[0].update(&v->textboxs[0], str, (v->figures[i].height/2 * (-1)*atof(tok.Literal)/v->figures[i].scale + v->figures[i].height/2 + v->figures[i].y)/4);
+              v->textboxs[0].update(&v->textboxs[0], str, fit_figure_y(atof(tok.Literal), &(v->figures[i]))/4);
             }
           }
         }

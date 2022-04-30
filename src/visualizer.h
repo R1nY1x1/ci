@@ -56,7 +56,6 @@ figure newFigure(int x, int y, int width, int height, variable *var);
 
 struct visualizer {
   grid *g;
-  int **grid_lines;
   int vars_n;
   variable **vars;
   figure *figures;
@@ -77,4 +76,7 @@ void free_visualizer(visualizer *v);
 void deleteVisualizer(visualizer *v);
 
 visualizer newVisualizer(grid *g, variable *vars[], int vars_n);
+
+int fit_figure_x(int step, figure *f);
+int fit_figure_y(double value, figure *f);
 #endif

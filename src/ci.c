@@ -42,6 +42,10 @@ void update_method(model *m, method *mthd) {
   mthd->function(m , mthd);
 }
 
+void deleteMethod(method *mthd) {
+  free(mthd->h_params);
+}
+
 method newMethod(double* h_params, int params_n, void function(model *, method *)) {
   method mthd;
   mthd.h_params = (double*)malloc(sizeof(double) * params_n);

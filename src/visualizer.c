@@ -37,7 +37,7 @@ void print_text(textbox *t) {
 void clear_textbox(textbox *t) {
   for (int i = 0; i < t->row_n; i++) {
     for (int j = 0; j < t->column_n; j++) {
-      mvdelch(t->row+i, t->column);
+      mvaddch(t->row+i, t->column+j, ' ');
     }
     t->texts[i][0] = '\0';
   }
@@ -65,19 +65,19 @@ void update_figure(figure *f) {
   char str[16];
   snprintf(str, sizeof(str), "name : %s", f->var->name);
   f->t.update(&(f->t), str, 2);
-  snprintf(str, sizeof(str), "value: %5.3lf", f->var->value);
+  snprintf(str, sizeof(str), "value: % 5.3lf", f->var->value);
   f->t.update(&(f->t), str, 3);
-  snprintf(str, sizeof(str), "diff : %5.3lf", f->var->value - f->var->pre_value);
+  snprintf(str, sizeof(str), "diff : %+5.3lf", f->var->value - f->var->pre_value);
   f->t.update(&(f->t), str, 4);
 }
 
 void plot_figure(figure *f, grid *g) {
   grid_draw_line(
     g,
-    (f->step - 1) * f->width / f->max_step + f->x,
-    clamp(f->height/2 * (-1)*f->var->pre_value/f->scale + f->height/2, 0, f->height) + f->y,
-    f->step * f->width / f->max_step + f->x,
-    clamp(f->height/2 * (-1)*f->var->value/f->scale + f->height/2, 0, f->height) + f->y
+    fit_figure_x(f->step - 1, f),
+    fit_figure_y(f->var->pre_value, f),
+    fit_figure_x(f->step, f),
+    fit_figure_y(f->var->value, f)
   );
   f->t.print(&(f->t));
 }
@@ -132,12 +132,17 @@ void grid_init(visualizer *v) {
     v->figures[i].t.clear_t(&(v->figures[i].t));
     v->figures[i].var->update(v->figures[i].var);
   }
+  attron(COLOR_PAIR(2) | A_BOLD);
   v->textboxs[0].print(&(v->textboxs[0]));
   v->textboxs[1].clear_t(&(v->textboxs[1]));
   renderer_update(v->g);
+  attroff(COLOR_PAIR(2) | A_BOLD);
 
-  for (int i = 0; v->grid_lines[i] != NULL; i++) {
-    grid_draw_line(v->g, v->grid_lines[i][0], v->grid_lines[i][1], v->grid_lines[i][2], v->grid_lines[i][3]);
+  grid_draw_line(v->g, 0, 0, 0, v->g->height-1);
+  grid_draw_line(v->g, v->g->width - 1, 0, v->g->width - 1, v->g->height-1);
+  grid_draw_line(v->g, 0, v->g->height - 1, v->g->width, v->g->height - 1);
+  for (int i = 0; i < (v->vars_n); i++) {
+    grid_draw_line(v->g, 0, v->g->height/(v->vars_n) * i, v->g->width, v->g->height/(v->vars_n) * i);
   }
 }
 
@@ -180,32 +185,6 @@ void deleteVisualizer(visualizer *v) {
 visualizer newVisualizer(grid *g, variable *vars[], int vars_n) {
   visualizer v;
   v.g = g;
-  v.grid_lines = (int**)malloc(sizeof(int*) * (3 + vars_n));
-  for (int i = 0; i < (3 + vars_n); i++) {
-    v.grid_lines[i] = (int*)malloc(sizeof(int) * 4);
-  }
-  // vertical left line
-  v.grid_lines[0][0] = 0;
-  v.grid_lines[0][1] = 0;
-  v.grid_lines[0][2] = 0;
-  v.grid_lines[0][3] = v.g->height-1;
-  // vertical right line
-  v.grid_lines[1][0] = v.g->width-1;
-  v.grid_lines[1][1] = 0;
-  v.grid_lines[1][2] = v.g->width-1;
-  v.grid_lines[1][3] = v.g->height-1;
-  // horizontal top line
-  v.grid_lines[2][0] = 0;
-  v.grid_lines[2][1] = v.g->height-1;
-  v.grid_lines[2][2] = v.g->width;
-  v.grid_lines[2][3] = v.g->height-1;
-  // horizontal line
-  for (int i = 0; i < (vars_n); i++) {
-    v.grid_lines[3+i][0] = 0;
-    v.grid_lines[3+i][1] = v.g->height/vars_n * i;
-    v.grid_lines[3+i][2] = v.g->width;
-    v.grid_lines[3+i][3] = v.g->height/vars_n * i;
-  }
   v.vars_n = vars_n;
   v.vars = vars;
   v.figures = (figure*)malloc(sizeof(figure) * vars_n);
@@ -222,4 +201,16 @@ visualizer newVisualizer(grid *g, variable *vars[], int vars_n) {
   v.free = free_visualizer;
   v.del = deleteVisualizer;
   return v;
+}
+
+int fit_figure_x(int step, figure *f) {
+  int x;
+  x = step * f->width / f->max_step + f->x;
+  return x;
+}
+
+int fit_figure_y(double value, figure *f) {
+  int y;
+  y = clamp(f->height/2 * (-1)*value/f->scale + f->height/2, 0, f->height) + f->y;
+  return y;
 }
