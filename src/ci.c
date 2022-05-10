@@ -54,6 +54,7 @@ method newMethod(double* h_params, int params_n, void function(model *, method *
   }
   mthd.function = function;
   mthd.update = update_method;
+  mthd.del = deleteMethod;
   return mthd;
 }
 

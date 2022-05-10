@@ -64,7 +64,6 @@ struct visualizer {
   void (*visualizer_init)(struct visualizer *);
   void (*grid_init)(struct visualizer *);
   void (*update)(struct visualizer *);
-  void (*free)(struct visualizer *);
   void (*del)(struct visualizer *);
 };
 typedef struct visualizer visualizer;
@@ -72,7 +71,6 @@ typedef struct visualizer visualizer;
 void visualizer_init(visualizer *v);
 void grid_init(visualizer *v);
 void update_visualizer(visualizer *v);
-void free_visualizer(visualizer *v);
 void deleteVisualizer(visualizer *v);
 
 visualizer newVisualizer(grid *g, variable *vars[], int vars_n);

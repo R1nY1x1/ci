@@ -16,7 +16,11 @@
 
 double fx(double *x) {
   return fabs(x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6);
+  //return x[0] * x[0] + 4 * x[1] * x[1];
 }
+
+double grad_x1(double x) { return 2 * x; }
+double grad_x2(double x) { return 8 * x; }
 
 double *x_ptr;
 double *d_ptr;
@@ -35,9 +39,12 @@ int main(int argc, char *argv[])
   */
 
   // Define Model
+  //double x[] = {-4.0, -2.0};
   double x[] = {((double)rand())/((double)RAND_MAX+1.0) * (5 - (-5)) + (-5)};
   //double x[] = {-5.0};
   double (*dx[])(double) = {
+    grad_x1,
+    grad_x2,
   };
   model m = newModel(sizeof(x)/sizeof(double), x, fx, dx);
   x_ptr = m.x;
@@ -45,6 +52,13 @@ int main(int argc, char *argv[])
 
   // Define Method
   /*
+  double h_params[] = {NAN};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, gradient_descent);
+  double sub_h_params[] = {0, pow(10, 2), pow(10, -2), pow(10, -3)};
+  int sub_params_n = sizeof(sub_h_params) / sizeof(double);
+  method sub_mthd = newMethod(sub_h_params, sub_params_n, bisection_method);
+  mthd.sub_mthd = &sub_mthd;
   double h_params[] = {0.01, 0};
   int params_n = sizeof(h_params) / sizeof(double);
   method mthd = newMethod(h_params, params_n, liner_method);
@@ -71,8 +85,15 @@ int main(int argc, char *argv[])
   // Define Visualizer
   int max_step = 1000;
   double scale = 5;
+  /*
+  variable var_x_1 = newVariable(&m.x[0], "x_1");
+  variable var_x_2 = newVariable(&m.x[1], "x_2");
+  variable var_fx = newVariable(&m.y, "fx");
+  variable var_alpha = newVariable(&mthd.h_params[0], "alpha");
+  */
   variable var_x_1 = newVariable(&m.x[0], "x_1");
   variable var_fx = newVariable(&m.y, "fx");
+  //variable *vars[] = {&var_x_1, &var_x_2, &var_fx, &var_alpha};
   variable *vars[] = {&var_x_1, &var_fx};
   int vars_n = sizeof(vars) / sizeof(variable*);
   visualizer v = newVisualizer(g, vars, vars_n);

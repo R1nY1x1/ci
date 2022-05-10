@@ -63,12 +63,16 @@ void update_figure(figure *f) {
   f->var->update(f->var);
   f->step++;
   char str[16];
-  snprintf(str, sizeof(str), "name : %s", f->var->name);
-  f->t.update(&(f->t), str, 2);
-  snprintf(str, sizeof(str), "value: % 5.3lf", f->var->value);
+  snprintf(str, sizeof(str), "[ %.3lf]", f->scale);
+  f->t.update(&(f->t), str, 1);
+  snprintf(str, sizeof(str), " name : %s", f->var->name);
   f->t.update(&(f->t), str, 3);
-  snprintf(str, sizeof(str), "diff : %+5.3lf", f->var->value - f->var->pre_value);
+  snprintf(str, sizeof(str), " value: % 5.3lf", f->var->value);
   f->t.update(&(f->t), str, 4);
+  snprintf(str, sizeof(str), " diff : %+5.3lf", f->var->value - f->var->pre_value);
+  f->t.update(&(f->t), str, 5);
+  snprintf(str, sizeof(str), "[-%.3lf]", f->scale);
+  f->t.update(&(f->t), str, f->t.row_n);
 }
 
 void plot_figure(figure *f, grid *g) {
@@ -165,7 +169,7 @@ void update_visualizer(visualizer *v) {
   v->textboxs[1].print(&(v->textboxs[1]));
 }
 
-void free_visualizer(visualizer *v) {
+void deleteVisualizer(visualizer *v) {
   for (int i = 0; i < (v->vars_n); i++) {
     for (int j = 0; j < (v->figures[i].t.row_n); j++) {
       free(v->figures[i].t.texts[j]);
@@ -174,10 +178,6 @@ void free_visualizer(visualizer *v) {
   }
   free(v->textboxs[0].texts);
   free(v->textboxs[1].texts);
-}
-
-void deleteVisualizer(visualizer *v) {
-  v->free(v);
   free(v->figures);
   free(v->textboxs);
 }
@@ -198,7 +198,6 @@ visualizer newVisualizer(grid *g, variable *vars[], int vars_n) {
   v.visualizer_init = visualizer_init;
   v.grid_init = grid_init;
   v.update = update_visualizer;
-  v.free = free_visualizer;
   v.del = deleteVisualizer;
   return v;
 }

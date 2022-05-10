@@ -48,8 +48,14 @@ void REP(visualizer *v, char *cmd) {
           if (l.NextToken(&l).Type == ASSIGN) {
             Token tok = l.NextToken(&l);
             char str[v->textboxs[0].column_n];
-            memset(str, ' ', sizeof(str));
+            //memset(str, ' ', sizeof(str));
             for (int y = v->figures[i].y+5; y < (v->figures[i].height + v->figures[i].y)+4; y++) {
+              memset(str, ' ', sizeof(str));
+              for(int i = 0; i < v->textboxs[0].column_n; i++) {
+                if (v->textboxs[0].texts[y/4-1][i] != '\0') {
+                  str[i] = v->textboxs[0].texts[y/4-1][i];
+                }
+              }
               str[fit_figure_x(atoi(tok.Literal), &(v->figures[i]))/2] = '|';
               v->textboxs[0].update(&v->textboxs[0], str, y/4+1);
             }

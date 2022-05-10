@@ -103,7 +103,7 @@ void hill_climbing(model *m, method *mthd) {
   h_params[1] : sigma
   */
   double x_rand[1];
-  x_rand[0] = rand_normal(mthd->h_params[0], mthd->h_params[1]) + m->x[0];
+  x_rand[0] = rand_normal(mthd->h_params[0], mthd->h_params[1]) * 1 + m->x[0];
 
   if (m->fx(x_rand) < m->fx(m->x)) {
     m->x[0] = x_rand[0];
