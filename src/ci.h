@@ -4,21 +4,24 @@
 struct model {
   int dim;
   double *x;
+  double *x_best;
   double y;
   double *d;
-  double (*fx)(double *);
-  double (**dx)(double);
+  double (*fx)(double *, int);
+  double (**dx)(double *, int);
   double (*grad_norm)(struct model *);
   void (*grad)(struct model *);
+  void (*grad_approx)(struct model *);
   void (*del)(struct model *);
 };
 typedef struct model model;
 
 double grad_norm(model *m);
 void grad(model *m);
+void grad(model *m);
 void deleteModel(model *m);
 
-model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double));
+model newModel(int dim, double *x, double (*fx)(double *, int), double (**dx)(double *, int));
 
 struct method {
   double *h_params;

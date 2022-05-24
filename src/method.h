@@ -12,4 +12,5 @@ double uniform(void);
 double rand_normal(double mu, double sigma);
 
 void hill_climbing(model *m, method *mthd);
+void simulated_annealing(model *m, method *mthd);
 #endif

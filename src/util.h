@@ -8,4 +8,5 @@ void printQuit(WINDOW *win);
 
 void insert_head(char *str, char *head);
 int clamp(int value, int min, int max);
+int clampf(double value, double min, double max);
 #endif

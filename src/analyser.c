@@ -20,7 +20,7 @@ void save_analyser_variable(analyser *a, char *filename, char *varname) {
   FILE *fp = fopen(filename, "w");
   for (int i = 0; i < a->vars_n; i++) {
     if (strcmp(a->vars[i]->name, varname) == 0) {
-      for (int l = 0; l < a->loop; l++) {
+      for (int l = 0; l <= a->loop; l++) {
         for (int s = 0; s < a->max_step; s++) {
           fprintf(fp, "%.3lf, ", a->historys[l][i][s]);
         }

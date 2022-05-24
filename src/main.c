@@ -14,32 +14,52 @@
 #include "interpreter/repl.h"
 #include "util.h"
 
-double fx(double *x) {
-  return fabs(x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6);
+double fx(double *x, int dim) {
+  double sum = 0;
+  for (int i = 0; i < dim; i++) {
+    //sum += x[i] * x[i];
+    sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]) + 10;
+  }
+  return sum;
+  //return fabs(x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6);
+}
+
+double grad_fx(double *x, int dim) {
+  //return 2 * x[dim];
+  return 2 * x[dim] + 20 * M_PI * sin(2 * M_PI * x[dim]);
+  /*
+  if ((x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6) > 0) {
+    return 3 * x[0] * x[0] * 4 * x[0] - 5;
+  } else {
+    return -1 * (3 * x[0] * x[0] * 4 * x[0] - 5);
+  }
+  */
 }
 
 double *x_ptr;
 double *d_ptr;
 
+void run_command(visualizer *v);
 void command_mode(visualizer *v);
 
 int main(int argc, char *argv[])
 {
   srand((unsigned int)time(NULL));
 
-  /*
-  for (int i = 0; i < 100; i++) {
-    printf("%lf\n", rand_normal(0, 1));
-  }
-  return 0;
-  */
-
   // Define Model
-  double x[] = {((double)rand())/((double)RAND_MAX+1.0) * (5 - (-5)) + (-5)};
+  int dim = 2;
+  //double x[] = {((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12)};
+  double x[dim];
+  for (int i = 0; i < dim; i++) {
+    x[i] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+  }
   //double x[] = {-5.0};
-  double (*dx[])(double) = {
-  };
-  model m = newModel(sizeof(x)/sizeof(double), x, fx, dx);
+  //int dim = sizeof(x) / sizeof(double);
+  double (*dx[dim])(double *, int);
+  for (int i = 0; i < dim; i++) {
+    dx[i] = grad_fx;
+  }
+  model m = newModel(dim, x, fx, dx);
   x_ptr = m.x;
   d_ptr = m.d;
 
@@ -49,9 +69,10 @@ int main(int argc, char *argv[])
   int params_n = sizeof(h_params) / sizeof(double);
   method mthd = newMethod(h_params, params_n, liner_method);
   */
-  double h_params[] = {0, 1};
+  //double h_params[] = {200, 50, 200, 0.9, 0, 0, 1};
+  double h_params[] = {1, pow(10, -5), 10, 0.9, 0, 0, 1, pow(10, -10), 0.6, 10000};
   int params_n = sizeof(h_params) / sizeof(double);
-  method mthd = newMethod(h_params, params_n, hill_climbing);
+  method mthd = newMethod(h_params, params_n, simulated_annealing);
 
   // Define Optimizer : optimizer is wrapper of updatation model by method
   optimizer o = newOptimizer(&mthd);
@@ -69,11 +90,12 @@ int main(int argc, char *argv[])
   init_pair(2, COLOR_RED, COLOR_BLACK);
 
   // Define Visualizer
-  int max_step = 1000;
-  double scale = 5;
+  int max_step = 10000;
+  double scale = 10;
   variable var_x_1 = newVariable(&m.x[0], "x_1");
+  variable var_x_2 = newVariable(&m.x[1], "x_2");
   variable var_fx = newVariable(&m.y, "fx");
-  variable *vars[] = {&var_x_1, &var_fx};
+  variable *vars[] = {&var_x_1, &var_x_2, &var_fx};
   int vars_n = sizeof(vars) / sizeof(variable*);
   visualizer v = newVisualizer(g, vars, vars_n);
   for (int i = 0; i < (v.vars_n); i++) {
@@ -82,7 +104,7 @@ int main(int argc, char *argv[])
   }
 
   // Define Analyser
-  int max_loop = 101;
+  int max_loop = 100;
   int run_by_loop = 1;
   analyser a = newAnalyser(vars, vars_n, max_step, max_loop);
 
@@ -96,31 +118,22 @@ int main(int argc, char *argv[])
         case 'l':
           run_by_loop = 0;
           break;
+        case 'c':
+          run_command(&v);
+          break;
       }
     }
   }
 
-  // Run Command
-  char *filename = ".circ";
-  FILE *fp = fopen(filename, "r");
-  if (fp == NULL) {
-    return -1;
-  }
-  struct stat fstat;
-  stat(filename, &fstat);
-  char *cmd = malloc(fstat.st_size);
-  while (fscanf(fp, "%[^\n] ", cmd) != EOF) {
-    REP(&v, cmd);
-  }
-  fclose(fp);
-
   // main loop : could enter COMMANDMODE and Change Initial x
   int earlystop_cnt = 0;
+  int stop_step_sum = 0;
   for (int l = 0; l < max_loop; l++) {
     for (int i = 0; i < sizeof(x)/sizeof(double); i++) {
       m.x[i] = x[i];
+      m.x_best[i] = x[i];
     }
-    m.y = m.fx(m.x);
+    m.y = m.fx(m.x, m.dim);
     for (int i = 0; i< sizeof(h_params)/sizeof(double); i++) {
       mthd.h_params[i] = h_params[i];
     }
@@ -141,12 +154,13 @@ int main(int argc, char *argv[])
             break;
         }
       }
-      if (m.fx(m.x) < pow(10, -5)) {
+      if (m.fx(m.x_best, m.dim) < pow(10, -5)) {
         earlystop_cnt++;
         break;
       }
     }
     renderer_update(v.g);
+    stop_step_sum += mthd.h_params[4];
 
     if (run_by_loop) {
       switch(getch()) {
@@ -177,7 +191,9 @@ int main(int argc, char *argv[])
           break;
       }
     }
-    x[0] = ((double)rand())/((double)RAND_MAX+1.0) * (5 - (-5)) + (-5);
+    for (int i = 0; i < dim; i++) {
+      x[i] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+    }
   }
 
   printQuit(stdscr);
@@ -191,7 +207,21 @@ int main(int argc, char *argv[])
   renderer_free();
   grid_free(v.g);
   printf("success: %d\n", earlystop_cnt);
+  printf("step sum: %d\n", stop_step_sum);
+  printf("average stop t: %lf\n", (double)stop_step_sum/(double)(max_loop-1));
   return 0;
+}
+
+void run_command(visualizer *v) {
+  char *filename = ".circ";
+  FILE *fp = fopen(filename, "r");
+  struct stat fstat;
+  stat(filename, &fstat);
+  char *cmd = malloc(fstat.st_size);
+  while (fscanf(fp, "%[^\n] ", cmd) != EOF) {
+    REP(v, cmd);
+  }
+  fclose(fp);
 }
 
 void command_mode(visualizer *v) {

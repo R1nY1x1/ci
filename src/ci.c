@@ -5,35 +5,48 @@
 double grad_norm(model *m) {
   double d_norm = 0.0;
   for (int i = 0; i < m->dim; i++) {
-    d_norm += pow(m->dx[i](m->x[i]), 2);
+    d_norm += pow(m->dx[i](m->x, i), 2);
   }
   return sqrt(d_norm);
 }
 
 void grad(model *m) {
   for (int i = 0; i < m->dim; i++) {
-    m->d[i] = -1 * m->dx[i](m->x[i]) / m->grad_norm(m);
+    m->d[i] = -1 * m->dx[i](m->x, i) / m->grad_norm(m);
   }
+}
+
+void grad_approx(model *m) {
+  double tmp[m->dim];
+  double delta = pow(10, -3);
+  for (int i = 0; i < m->dim; i++) {
+    tmp[i] = m->x[i] + delta;
+  }
+  m->d[0] = (m->fx(m->x, m->dim) - m->fx(tmp, m->dim)) / delta;
 }
 
 void deleteModel(model *m) {
   free(m->x);
+  free(m->x_best);
   free(m->d);
 }
 
-model newModel(int dim, double *x, double (*fx)(double *), double (**dx)(double)) {
+model newModel(int dim, double *x, double (*fx)(double *, int), double (**dx)(double *, int)) {
   model m;
   m.dim = dim;
   m.x = (double*)malloc(sizeof(double) * m.dim);
+  m.x_best = (double*)malloc(sizeof(double) * m.dim);
   for (int i = 0; i < dim; i++){
     m.x[i] = x[i];
+    m.x_best[i] = x[i];
   }
-  m.y = fx(x);
+  m.y = fx(x, dim);
   m.d = (double*)malloc(sizeof(double) * m.dim);
   m.fx = fx;
   m.dx = dx;
   m.grad_norm = grad_norm;
   m.grad = grad;
+  m.grad_approx = grad_approx;
   m.del = deleteModel;
   return m;
 }
