@@ -13,4 +13,7 @@ double rand_normal(double mu, double sigma);
 
 void hill_climbing(model *m, method *mthd);
 void simulated_annealing(model *m, method *mthd);
+
+void nelder_mead(model *m, method *mthd);
+void particale_swarm_optimization(model *m, method *mthd);
 #endif

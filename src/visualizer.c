@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ncurses.h>
-#include "grid.h"
-#include "renderer.h"
+#include "../dotdotdot/src/grid.h"
+#include "../dotdotdot/src/renderer.h"
 #include "visualizer.h"
 #include "util.h"
 

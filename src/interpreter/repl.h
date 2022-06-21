@@ -7,8 +7,8 @@
 #include <math.h>
 #include "token.h"
 #include "lexer.h"
-#include "grid.h"
-#include "renderer.h"
+#include "../../dotdotdot/src/grid.h"
+#include "../../dotdotdot/src/renderer.h"
 #include "../visualizer.h"
 
 #include <ncurses.h>

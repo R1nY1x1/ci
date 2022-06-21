@@ -112,7 +112,7 @@ void hill_climbing(model *m, method *mthd) {
   m->y = m->fx(m->x, m->dim);
 }
 
-void simulated_annealing(model *m, method *mthd){
+void simulated_annealing(model *m, method *mthd) {
   /*
   h_params[0] : T
   h_params[1] : T_min
@@ -155,6 +155,138 @@ void simulated_annealing(model *m, method *mthd){
       }
     }
   }
-  //m->y = m->fx(m->x, m->dim);
+  m->y = m->fx(m->x_best, m->dim);
+}
+
+void nelder_mead(model *m, method *mthd) {
+  /*
+    h_params[0] : M
+    h_params[1] : alpha
+    h_params[2] : gamma
+    h_params[3] : beta
+    h_params[4] : idx_low
+    h_params[5] : idx_second
+    h_params[6] : idx_high
+    h_params[7] : fx_call
+  */
+  int fx_call = 0;
+  double y_low = m->fx(m->x_candidates[(int)mthd->h_params[4]], m->dim);
+  fx_call++;
+  double y_second = m->fx(m->x_candidates[(int)mthd->h_params[5]], m->dim);
+  fx_call++;
+  double y_high = m->fx(m->x_candidates[(int)mthd->h_params[6]], m->dim);
+  fx_call++;
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    if (m->fx(m->x_candidates[i], m->dim) < m->fx(m->x_candidates[(int)mthd->h_params[4]], m->dim)) {
+      mthd->h_params[4] = i;
+    } else if (m->fx(m->x_candidates[i], m->dim) > m->fx(m->x_candidates[(int)mthd->h_params[6]], m->dim)) {
+      mthd->h_params[6] = i;
+    } else if (m->fx(m->x_candidates[i], m->dim) > m->fx(m->x_candidates[(int)mthd->h_params[5]], m->dim)) {
+      mthd->h_params[5] = i;
+    }
+  } 
+
+  double x_center[m->dim];
+  for (int i = 0; i < m->dim; i++) {
+    x_center[i] = 0;
+    for (int j = 0; j < mthd->h_params[0]; j++) {
+      if (j != mthd->h_params[6]) {
+        x_center[i] += m->x_candidates[j][i];
+      }
+    }
+    x_center[i] /= (mthd->h_params[0] - 1);
+  }
+
+  double x_reflect[m->dim];
+  for (int i = 0; i < m->dim; i++) {
+    x_reflect[i] = x_center[i] + mthd->h_params[1] * (x_center[i] - m->x_candidates[(int)mthd->h_params[6]][i]);
+  }
+  double y_reflect = m->fx(x_reflect, m->dim);
+  fx_call++;
+
+  if (y_reflect < y_low) {
+    double x_expansion[m->dim];
+    for (int i = 0; i < m->dim; i++) {
+      x_expansion[i] = x_center[i] + mthd->h_params[2] * (x_reflect[i] - x_center[i]);
+    }
+    double y_expansion = m->fx(x_expansion, m->dim);
+    fx_call++;
+    if (y_expansion < y_reflect) {
+      for (int i = 0; i < m->dim; i++) {
+        m->x_candidates[(int)mthd->h_params[6]][i] = x_expansion[i];
+      }
+    } else {
+      for (int i = 0; i < m->dim; i++) {
+        m->x_candidates[(int)mthd->h_params[6]][i] = x_reflect[i];
+      }
+    }
+  } else if ((y_low < y_reflect) && (y_reflect < y_second)) {
+    for (int i = 0; i < m->dim; i++) {
+      m->x_candidates[(int)mthd->h_params[6]][i] = x_reflect[i];
+    }
+  } else {
+    double x_shrink[m->dim];
+    for (int i = 0; i < m->dim; i++) {
+      x_shrink[i] = x_center[i] + mthd->h_params[3] * (m->x_candidates[(int)mthd->h_params[6]][i] - x_center[i]);
+    }
+    double y_shrink = m->fx(x_shrink, m->dim);
+    fx_call++;
+    if (y_shrink < y_high) {
+      for (int i = 0; i < m->dim; i++) {
+        m->x_candidates[(int)mthd->h_params[6]][i] = x_shrink[i];
+      }
+    } else {
+      for (int i = 0; i < mthd->h_params[0]; i++) {
+        if (i != mthd->h_params[4]) {
+          for (int j = 0; j < m->dim; j++) {
+            m->x_candidates[i][j] = m->x_candidates[(int)mthd->h_params[4]][j] + 0.5 * (m->x_candidates[i][j] - m->x_candidates[(int)mthd->h_params[4]][j]);
+          }
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < m->dim; i++) {
+    m->x_best[i] = m->x_candidates[(int)mthd->h_params[4]][i];
+  }
+  m->y = m->fx(m->x_best, m->dim);
+}
+
+void particale_swarm_optimization(model *m, method *mthd) {
+  /*
+    h_params[0] : M
+    h_params[1] : w
+    h_params[2] : c
+  */
+  double y_candidates;
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    y_candidates = m->fx(m->x_candidates[i], m->dim);
+    if (y_candidates < m->fx(m->x_candidates_best[i], m->dim)) {
+      for (int j = 0; j < m->dim; j++) {
+        m->x_candidates_best[i][j] = m->x_candidates[i][j];
+      }
+      if (m->fx(m->x_candidates_best[i], m->dim) < m->fx(m->x_best, m->dim)) {
+        for (int j = 0; j < m->dim; j++) {
+          m->x_best[j] = m->x_candidates_best[i][j];
+        }
+      }
+    }
+  }
+
+  double r1, r2;
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    for (int j = 0; j < m->dim; j++) {
+      r1 = uniform();
+      r2 = uniform();
+      m->v_candidates[i][j] = 
+          mthd->h_params[1] * m->v_candidates[i][j]
+        + mthd->h_params[2] * r1 * (m->x_candidates_best[i][j] - m->x_candidates[i][j])
+        + mthd->h_params[2] * r2 * (m->x_best[j] - m->x_candidates[i][j]);
+      m->x_candidates[i][j] = m->x_candidates[i][j] + m->v_candidates[i][j];
+    }
+  }
+
   m->y = m->fx(m->x_best, m->dim);
 }

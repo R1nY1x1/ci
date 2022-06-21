@@ -5,8 +5,8 @@
 #include <unistd.h>
 #include <ncurses.h>
 #include <sys/stat.h>
-#include "grid.h"
-#include "renderer.h"
+#include "../dotdotdot/src/grid.h"
+#include "../dotdotdot/src/renderer.h"
 #include "ci.h"
 #include "method.h"
 #include "visualizer.h"
@@ -17,23 +17,15 @@
 double fx(double *x, int dim) {
   double sum = 0;
   for (int i = 0; i < dim; i++) {
-    //sum += x[i] * x[i];
-    sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]) + 10;
+    sum += x[i] * x[i];
+    //sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]) + 10;
   }
   return sum;
-  //return fabs(x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6);
 }
 
 double grad_fx(double *x, int dim) {
   //return 2 * x[dim];
   return 2 * x[dim] + 20 * M_PI * sin(2 * M_PI * x[dim]);
-  /*
-  if ((x[0] * x[0] * x[0] + 2 * x[0] * x[0] - 5 * x[0] + 6) > 0) {
-    return 3 * x[0] * x[0] * 4 * x[0] - 5;
-  } else {
-    return -1 * (3 * x[0] * x[0] * 4 * x[0] - 5);
-  }
-  */
 }
 
 double *x_ptr;
@@ -48,13 +40,10 @@ int main(int argc, char *argv[])
 
   // Define Model
   int dim = 2;
-  //double x[] = {((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12)};
   double x[dim];
   for (int i = 0; i < dim; i++) {
     x[i] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
   }
-  //double x[] = {-5.0};
-  //int dim = sizeof(x) / sizeof(double);
   double (*dx[dim])(double *, int);
   for (int i = 0; i < dim; i++) {
     dx[i] = grad_fx;
@@ -64,15 +53,45 @@ int main(int argc, char *argv[])
   d_ptr = m.d;
 
   // Define Method
+  int M = 30;
+  m.x_candidates = (double**)malloc(sizeof(double*) * M);
+  m.x_candidates_best = (double**)malloc(sizeof(double*) * M);
+  m.v_candidates = (double**)malloc(sizeof(double*) * M);
+  for (int i = 0; i < M; i++) {
+    m.x_candidates[i] = (double*)malloc(sizeof(double) * dim);
+    m.x_candidates_best[i] = (double*)malloc(sizeof(double) * dim);
+    m.v_candidates[i] = (double*)malloc(sizeof(double) * dim);
+    for (int j = 0; j < dim; j++) {
+      m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+      m.x_candidates_best[i][j] = m.x_candidates[i][j];
+    m.v_candidates[i][j] = 0;
+    }
+    if (m.fx(m.x_candidates_best[i], m.dim) < m.fx(m.x_best, m.dim)) {
+      for (int j = 0; j < dim; j++) {
+        m.x_best[j] = m.x_candidates_best[i][j];
+      }
+    }
+  }
+  int idx_low = 0;
+  int idx_second = 0;
+  int idx_high = 0;
+  for (int i = 0; i < M; i++) {
+    if (fx(m.x_candidates[i], m.dim) < fx(m.x_candidates[idx_low], m.dim)) {
+      idx_low = i;
+    } else if (fx(m.x_candidates[i], m.dim) > fx(m.x_candidates[idx_high], m.dim)) {
+      idx_high = i;
+    } else if (fx(m.x_candidates[i], m.dim) > fx(m.x_candidates[idx_second], m.dim)) {
+      idx_second = i;
+    }
+  } 
+  double h_params[] = {M, 1.0, 2, 0.5, idx_low, idx_second, idx_high};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, nelder_mead);
   /*
-  double h_params[] = {0.01, 0};
+  double h_params[] = {M, 0.729, 1.494};
   int params_n = sizeof(h_params) / sizeof(double);
-  method mthd = newMethod(h_params, params_n, liner_method);
+  method mthd = newMethod(h_params, params_n, particale_swarm_optimization);
   */
-  //double h_params[] = {200, 50, 200, 0.9, 0, 0, 1};
-  double h_params[] = {1, pow(10, -5), 10, 0.9, 0, 0, 1, pow(10, -10), 0.6, 10000};
-  int params_n = sizeof(h_params) / sizeof(double);
-  method mthd = newMethod(h_params, params_n, simulated_annealing);
 
   // Define Optimizer : optimizer is wrapper of updatation model by method
   optimizer o = newOptimizer(&mthd);
@@ -90,10 +109,10 @@ int main(int argc, char *argv[])
   init_pair(2, COLOR_RED, COLOR_BLACK);
 
   // Define Visualizer
-  int max_step = 10000;
+  int max_step = 1000;
   double scale = 10;
-  variable var_x_1 = newVariable(&m.x[0], "x_1");
-  variable var_x_2 = newVariable(&m.x[1], "x_2");
+  variable var_x_1 = newVariable(&m.x_best[0], "x_1");
+  variable var_x_2 = newVariable(&m.x_best[1], "x_2");
   variable var_fx = newVariable(&m.y, "fx");
   variable *vars[] = {&var_x_1, &var_x_2, &var_fx};
   int vars_n = sizeof(vars) / sizeof(variable*);
@@ -129,9 +148,22 @@ int main(int argc, char *argv[])
   int earlystop_cnt = 0;
   int stop_step_sum = 0;
   for (int l = 0; l < max_loop; l++) {
+    // TODO Model.init and Method.init
     for (int i = 0; i < sizeof(x)/sizeof(double); i++) {
       m.x[i] = x[i];
       m.x_best[i] = x[i];
+    }
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < dim; j++) {
+        m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+        m.x_candidates_best[i][j] = m.x_candidates[i][j];
+        m.v_candidates[i][j] = 0;
+      }
+      if (m.fx(m.x_candidates_best[i], m.dim) < m.fx(m.x_best, m.dim)) {
+        for (int j = 0; j < dim; j++) {
+          m.x_best[j] = m.x_candidates_best[i][j];
+        }
+      }
     }
     m.y = m.fx(m.x, m.dim);
     for (int i = 0; i< sizeof(h_params)/sizeof(double); i++) {
@@ -160,7 +192,7 @@ int main(int argc, char *argv[])
       }
     }
     renderer_update(v.g);
-    stop_step_sum += mthd.h_params[4];
+    stop_step_sum += a.step;
 
     if (run_by_loop) {
       switch(getch()) {
@@ -193,6 +225,11 @@ int main(int argc, char *argv[])
     }
     for (int i = 0; i < dim; i++) {
       x[i] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+    }
+    for (int i = 0; i < M; i++) {
+      for (int j = 0; j < dim; j++) {
+        m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+      }
     }
   }
 

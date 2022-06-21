@@ -1,7 +1,7 @@
 #ifndef _VISUALIZER_H
 #define _VISUALIZER_H
 
-#include "grid.h"
+#include "../dotdotdot/src/grid.h"
 
 struct variable {
   double pre_value;
@@ -15,6 +15,7 @@ typedef struct variable variable;
 void update_variable(variable *var);
 
 variable newVariable(double *ptr, char *name);
+
 
 struct textbox {
   int row;
@@ -33,6 +34,7 @@ void print_text(textbox *t);
 void clear_textbox(textbox *t);
 
 textbox newTextbox(int row, int column, int row_n, int column_n);
+
 
 struct figure {
   int x;
@@ -53,6 +55,7 @@ void update_figure(figure *f);
 void plot_figure(figure *f, grid *g);
 
 figure newFigure(int x, int y, int width, int height, variable *var);
+
 
 struct visualizer {
   grid *g;

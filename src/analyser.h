@@ -10,8 +10,10 @@ struct analyser {
   double ***historys;
   int step;
   int max_step;
+  int *steps;
   int loop;
   int max_loop;
+  int fx_call;
   void (*init)(struct analyser *);
   void (*update)(struct analyser *);
   void (*save_var)(struct analyser *, char *, char *);

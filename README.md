@@ -1,29 +1,11 @@
 # CI : Computational Intelligence
 
-# Usage
+This repository is CI in CLI.
 
-# Object Model
+CI is Computational Intelligence. ex)Simulated Annealing, Nelder Mead, PSO
 
-+-------+
+# Support
 
-| Model |
+Support MacOS only.
 
-+-------+
-
-+-----------+    +--------+
-
-| Optimizer | -> | Method |
-
-+-----------+    +--------+
-
-+------------+     +--------+    +---------+
-
-| Visualizer | --> | Figure | -> | Textbox |
-
-+------------+ |   +--------+    +---------+
-
-               |   +---------+
-
-               |-> | Textbox |
-
-                   +---------+
+Other operation system display may be corrupted.

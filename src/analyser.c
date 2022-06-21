@@ -14,6 +14,7 @@ void update_analyser(analyser *a) {
     a->historys[a->loop][i][a->step] = a->vars[i]->value;
   }
   a->step++;
+  a->steps[a->loop] = a->step;
 }
 
 void save_analyser_variable(analyser *a, char *filename, char *varname) {
@@ -22,7 +23,11 @@ void save_analyser_variable(analyser *a, char *filename, char *varname) {
     if (strcmp(a->vars[i]->name, varname) == 0) {
       for (int l = 0; l <= a->loop; l++) {
         for (int s = 0; s < a->max_step; s++) {
-          fprintf(fp, "%.3lf, ", a->historys[l][i][s]);
+          if (s < a->steps[l]) {
+            fprintf(fp, "%.8lf, ", a->historys[l][i][s]);
+         } else {
+            fprintf(fp, "%.8lf, ", a->historys[l][i][a->steps[l]-1]);
+          }
         }
         fprintf(fp, "\n");
       }
@@ -83,8 +88,10 @@ analyser newAnalyser(variable **vars, int vars_n, int max_step, int max_loop) {
   }
   a.step = 0;
   a.max_step = max_step;
+  a.steps = (int*)malloc(sizeof(int) * max_loop);
   a.loop = -1;
   a.max_loop = max_loop;
+  a.fx_call = 0;
   a.init = init_analyser;
   a.update = update_analyser;
   a.save_var = save_analyser_variable;
