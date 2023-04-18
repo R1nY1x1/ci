@@ -16,4 +16,6 @@ void simulated_annealing(model *m, method *mthd);
 
 void nelder_mead(model *m, method *mthd);
 void particale_swarm_optimization(model *m, method *mthd);
+void differential_evolution_best1bin(model *m, method *mthd);
+void differential_evolution_rand1bin(model *m, method *mthd);
 #endif

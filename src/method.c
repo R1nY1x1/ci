@@ -290,3 +290,134 @@ void particale_swarm_optimization(model *m, method *mthd) {
 
   m->y = m->fx(m->x_best, m->dim);
 }
+
+void differential_evolution_best1bin(model *m, method *mthd){
+  /*
+    h_params[0] : M
+    h_params[1] : Cr
+    h_params[2] : Fw
+  */
+  int ida = 0;
+  int idb = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+  int idc = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+  int jr;
+  double ri;
+  double v[m->dim];
+  double u[m->dim];
+  double x_new[(int)mthd->h_params[0]][m->dim];
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    for (int j = 0; j < mthd->h_params[0]; j++) {
+      if (m->fx(m->x_candidates[j], m->dim) < m->fx(m->x_candidates[ida], m->dim)) {
+        ida = j;
+      }
+    }
+    if (ida == i) {
+      //continue;
+    }
+    while (idb == ida || idb == i) {
+      idb = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+    }
+    while (idc == ida || idc == idb || idc == i) {
+      idc = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+    }
+    for (int j = 0; j < m->dim; j++) {
+      v[j] = m->x_candidates[ida][j] + mthd->h_params[2] * (m->x_candidates[idb][j] - m->x_candidates[idc][j]);
+    }
+
+    jr = rand() / (RAND_MAX / m->dim + 1);
+    for (int j = 0; j < m->dim; j++) {
+      ri = uniform();
+      u[j] = ((ri <= mthd->h_params[1]) || (j == jr)) ? v[j] : m->x_candidates[i][j];
+    }
+    if (m->fx(u, m->dim) < m->fx(m->x_candidates[i], m->dim)) {
+      for (int j = 0; j < m->dim; j++) {
+        x_new[i][j] = u[j];
+        m->x_candidates[i][j] = u[j];
+      }
+    } else {
+      for (int j = 0; j < m->dim; j++) {
+        x_new[i][j] = m->x_candidates[i][j];
+      }
+    }
+  }
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    for (int j = 0; j < m->dim; j++) {
+      m->x_candidates[i][j] = x_new[i][j];
+    }
+  }
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    if (m->fx(m->x_candidates[i], m->dim) < m->fx(m->x_best, m->dim)) {
+      for (int j = 0; j < m->dim; j++) {
+        m->x_best[j] = m->x_candidates[i][j];
+      }
+    }
+  }
+
+  m->y = m->fx(m->x_best, m->dim);
+}
+
+void differential_evolution_rand1bin(model *m, method *mthd){
+  /*
+    h_params[0] : M
+    h_params[1] : Cr
+    h_params[2] : Fw
+  */
+  int ida = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+  int idb = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+  int idc = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+  int jr;
+  double ri;
+  double v[m->dim];
+  double u[m->dim];
+  double x_new[(int)mthd->h_params[0]][m->dim];
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    while (ida == i) {
+      ida = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+    }
+    while (idb == ida || idb == i) {
+      idb = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+    }
+    while (idc == ida || idc == idb || idc == i) {
+      idc = rand() / (RAND_MAX / mthd->h_params[0] + 1);
+    }
+    for (int j = 0; j < m->dim; j++) {
+      v[j] = m->x_candidates[ida][j] + mthd->h_params[2] * (m->x_candidates[idb][j] - m->x_candidates[idc][j]);
+    }
+
+    jr = rand() / (RAND_MAX / m->dim + 1);
+    for (int j = 0; j < m->dim; j++) {
+      ri = uniform();
+      u[j] = ((ri <= mthd->h_params[1]) || (j == jr)) ? v[j] : m->x_candidates[i][j];
+    }
+    if (m->fx(u, m->dim) < m->fx(m->x_candidates[i], m->dim)) {
+      for (int j = 0; j < m->dim; j++) {
+        x_new[i][j] = u[j];
+        m->x_candidates[i][j] = u[j];
+      }
+    } else {
+      for (int j = 0; j < m->dim; j++) {
+        x_new[i][j] = m->x_candidates[i][j];
+      }
+    }
+  }
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    for (int j = 0; j < m->dim; j++) {
+      m->x_candidates[i][j] = x_new[i][j];
+    }
+  }
+
+  for (int i = 0; i < mthd->h_params[0]; i++) {
+    if (m->fx(m->x_candidates[i], m->dim) < m->fx(m->x_best, m->dim)) {
+      for (int j = 0; j < m->dim; j++) {
+        m->x_best[j] = m->x_candidates[i][j];
+      }
+    }
+  }
+
+  m->y = m->fx(m->x_best, m->dim);
+}

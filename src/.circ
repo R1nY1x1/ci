@@ -1,2 +1,2 @@
-let scale = 20
-let max_step = 1000
+let scale = 3
+let max_step = 20

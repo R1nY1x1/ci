@@ -17,15 +17,15 @@
 double fx(double *x, int dim) {
   double sum = 0;
   for (int i = 0; i < dim; i++) {
-    sum += x[i] * x[i];
-    //sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]) + 10;
+    //sum += x[i] * x[i];
+    sum += x[i] * x[i] - 10 * cos(2 * M_PI * x[i]) + 10;
   }
   return sum;
 }
 
 double grad_fx(double *x, int dim) {
-  //return 2 * x[dim];
-  return 2 * x[dim] + 20 * M_PI * sin(2 * M_PI * x[dim]);
+  return 2 * x[dim];
+  //return 2 * x[dim] + 20 * M_PI * sin(2 * M_PI * x[dim]);
 }
 
 double *x_ptr;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
     for (int j = 0; j < dim; j++) {
       m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
       m.x_candidates_best[i][j] = m.x_candidates[i][j];
-    m.v_candidates[i][j] = 0;
+      m.v_candidates[i][j] = 0;
     }
     if (m.fx(m.x_candidates_best[i], m.dim) < m.fx(m.x_best, m.dim)) {
       for (int j = 0; j < dim; j++) {
@@ -72,6 +72,7 @@ int main(int argc, char *argv[])
       }
     }
   }
+
   int idx_low = 0;
   int idx_second = 0;
   int idx_high = 0;
@@ -91,6 +92,10 @@ int main(int argc, char *argv[])
   double h_params[] = {M, 0.729, 1.494};
   int params_n = sizeof(h_params) / sizeof(double);
   method mthd = newMethod(h_params, params_n, particale_swarm_optimization);
+  double h_params[] = {M, 0.5, 0.9};
+  int params_n = sizeof(h_params) / sizeof(double);
+  method mthd = newMethod(h_params, params_n, differential_evolution_rand1bin);
+  method mthd = newMethod(h_params, params_n, differential_evolution_best1bin);
   */
 
   // Define Optimizer : optimizer is wrapper of updatation model by method
@@ -109,10 +114,12 @@ int main(int argc, char *argv[])
   init_pair(2, COLOR_RED, COLOR_BLACK);
 
   // Define Visualizer
-  int max_step = 1000;
+  int max_step = 100;
   double scale = 10;
-  variable var_x_1 = newVariable(&m.x_best[0], "x_1");
-  variable var_x_2 = newVariable(&m.x_best[1], "x_2");
+  //variable var_x_1 = newVariable(&m.x_best[0], "x_1");
+  //variable var_x_2 = newVariable(&m.x_best[1], "x_2");
+  variable var_x_1 = newVariable(&m.x_candidates[0][0], "x_1");
+  variable var_x_2 = newVariable(&m.x_candidates[0][1], "x_2");
   variable var_fx = newVariable(&m.y, "fx");
   variable *vars[] = {&var_x_1, &var_x_2, &var_fx};
   int vars_n = sizeof(vars) / sizeof(variable*);
@@ -155,7 +162,7 @@ int main(int argc, char *argv[])
     }
     for (int i = 0; i < M; i++) {
       for (int j = 0; j < dim; j++) {
-        m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
+        //m.x_candidates[i][j] = ((double)rand())/((double)RAND_MAX+1.0) * (5.12 - (-5.12)) + (-5.12);
         m.x_candidates_best[i][j] = m.x_candidates[i][j];
         m.v_candidates[i][j] = 0;
       }
@@ -235,7 +242,7 @@ int main(int argc, char *argv[])
 
   printQuit(stdscr);
   renderer_update(v.g);
-  a.save_var(&a, "date.csv", var_fx.name);
+  a.save_var(&a, "data.csv", var_fx.name);
   m.del(&m);
   mthd.del(&mthd);
   o.del(&o);
